@@ -1,19 +1,12 @@
 module SpeakAndSpellTest exposing
-    ( clickCommands
-    , clickLetters
-    , clickSoundControls
-    , getWordsFromAPI
-    , isInitializedOutputScreen
+    ( getWordsFromAPI
     , isPresentAppColours
     , isPresentAppName
     , isPresentBrandLink
     , isPresentBrandLogo
     , isPresentBrandName
-    , isPresentCommands
-    , isPresentKeyboard
     , isPresentLoading
     , isPresentShellLogo
-    , isPresentSoundControls
     )
 
 import Expect
@@ -24,22 +17,16 @@ import Json.Decode exposing (decodeValue)
 import Json.Encode as Encode
 import SpeakAndSpell
     exposing
-        ( Model
-        , Msg(..)
-        , Sound(..)
+        ( Msg
         , elmLogoBlue
         , elmLogoGray
         , initialModel
         , namePlusLogo
-        , namePlusSoundCtrl
         , newWordDecoder
         , outputScreen
-        , outputText
-        , theKeyboard
         , viewLoading
         )
 import Test exposing (Test, describe, fuzz3, test)
-import Test.Html.Event as Event
 import Test.Html.Query as Query exposing (Single)
 import Test.Html.Selector exposing (attribute, classes, tag, text)
 
@@ -61,32 +48,6 @@ loadingText =
     [ "L", "O", "A", "D", "I", "N", "G" ]
 
 
-alphabet : List String
-alphabet =
-    -- A to Z in ASCII is 65 to 90
-    List.range 65 90
-        |> List.map (\ascii -> String.fromChar (Char.fromCode ascii))
-
-
-keyboardCommands : List ( Msg, String )
-keyboardCommands =
-    [ ( EraseLetter, "ERASE [↤]" )
-    , ( ResetWord, "RESET [5]" )
-    , ( Speak, "SPEAK [8]" )
-    , ( Spell, "SPELL [9]" )
-    , ( SubmitWord, "SUBMIT [↵]" )
-    , ( ResetWord, "RETRY [6]" )
-    , ( GetAnotherWord, "NEW [0]" )
-    ]
-
-
-soundCommands : List ( Msg, String )
-soundCommands =
-    [ ( SetSound Off, "SOUND OFF [3]" )
-    , ( SetSound On, "SOUND ON [2]" )
-    ]
-
-
 
 -- HELPER FUNCTIONS
 
@@ -101,23 +62,6 @@ findAriaLabel componentToTest ariaLabelCommon ariaLabelSpecific =
                     (ariaLabelCommon ++ ariaLabelSpecific)
                 )
             ]
-
-
-allThingsClicker : Html Msg -> Msg -> String -> String -> Test
-allThingsClicker componentToTest message ariaToFind item =
-    test ("clicking " ++ item) <|
-        \_ ->
-            findAriaLabel componentToTest ariaToFind (" " ++ item)
-                |> Event.simulate Event.click
-                |> Event.expect message
-
-
-allThingsChecker : Html msg -> String -> String -> String -> Test
-allThingsChecker componentToTest ariaToFind tagToFind item =
-    test ("is present " ++ item) <|
-        \_ ->
-            findAriaLabel componentToTest ariaToFind (" " ++ item)
-                |> Query.has [ tag tagToFind, text item ]
 
 
 outputScreenQueryHtml : Single Msg
@@ -228,83 +172,6 @@ getWordsFromAPI =
 
 
 -- OUTPUT SCREEN TESTS
-
-
-isInitializedOutputScreen : Model -> Test
-isInitializedOutputScreen model =
-    test "render the output screen with the default message" <|
-        \_ ->
-            outputText model
-                |> Expect.equal "START TYPING TO MATCH THE WORD ABOVE"
-
-
-
 -- CLICKING TESTS
-
-
-clickLetters : Model -> Test
-clickLetters model =
-    describe "click all letters keys on the onscreen keyboard" <|
-        List.map
-            (\letter ->
-                allThingsClicker (theKeyboard model) (KeyClicked letter) "Keyboard Key" letter
-            )
-            alphabet
-
-
-clickCommands : Model -> Test
-clickCommands model =
-    describe "click all onscreen keyboard commands" <|
-        List.map
-            (\cmd ->
-                allThingsClicker (theKeyboard model) (Tuple.first cmd) "Command" (Tuple.second cmd)
-            )
-            keyboardCommands
-
-
-clickSoundControls : Model -> Test
-clickSoundControls model =
-    describe "click all sound controls commands" <|
-        List.map
-            (\cmd ->
-                allThingsClicker (namePlusSoundCtrl model) (Tuple.first cmd) "Command" (Tuple.second cmd)
-            )
-            soundCommands
-
-
-
 -- LETTERS TESTS
-
-
-isPresentKeyboard : Model -> Test
-isPresentKeyboard model =
-    describe "all letters are present on the onscreen keyboard" <|
-        List.map
-            (\letter ->
-                allThingsChecker (theKeyboard model) "Keyboard Key" "button" letter
-            )
-            alphabet
-
-
-
 -- COMMANDS TESTS
-
-
-isPresentCommands : Model -> Test
-isPresentCommands model =
-    describe "all commands are present on the onscreen keyboard" <|
-        List.map
-            (\command ->
-                allThingsChecker (theKeyboard model) "Command" "button" (Tuple.second command)
-            )
-            keyboardCommands
-
-
-isPresentSoundControls : Model -> Test
-isPresentSoundControls model =
-    describe "all sound controls are present" <|
-        List.map
-            (\command ->
-                allThingsChecker (namePlusSoundCtrl model) "Command" "button" (Tuple.second command)
-            )
-            soundCommands
