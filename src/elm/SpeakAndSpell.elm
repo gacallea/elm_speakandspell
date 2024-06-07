@@ -1,7 +1,5 @@
 port module SpeakAndSpell exposing
-    ( Code
-    , Flags
-    , Model
+    ( Model
     , Msg(..)
     , NewWord
     , Output(..)
@@ -9,37 +7,34 @@ port module SpeakAndSpell exposing
     , Status(..)
     , elmLogoBlue
     , elmLogoGray
-    , initialModel
     , main
     , namePlusLogo
-    , namePlusSoundCtrl
     , newWordDecoder
     , outputScreen
-    , outputText
-    , theKeyboard
     , viewLoading
     )
 
 import Accessibility.Aria as Aria
 import Browser
 import Browser.Events
-import Html exposing (Html, a, button, div, img, li, main_, p, text, ul)
+import Html exposing (Html, a, button, div, img, main_, p, text)
 import Html.Attributes as Attr
 import Html.Events exposing (onClick)
 import Http
-import I18Next exposing (Translations, initialTranslations, translationsDecoder)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
-import Json.Encode as Encode
 import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
-import Translations.Command as TranslationCmd
-import Translations.Init as TranslationInit
-import Translations.Screen as TranslationScreen
 import VitePluginHelper exposing (asset)
 
 
 
 -- CONSTANTS
+
+
+randomWordsApiUrl : String
+randomWordsApiUrl =
+    -- api source = https://github.com/mcnaveen/Random-Words-API
+    "https://random-words-api.vercel.app/word"
 
 
 elmLogoBlue : String
@@ -50,16 +45,6 @@ elmLogoBlue =
 elmLogoGray : String
 elmLogoGray =
     asset "../img/ElmLogoGray.svg"
-
-
-gbFlag : String
-gbFlag =
-    asset "../img/flags/gb.svg"
-
-
-nlFlag : String
-nlFlag =
-    asset "../img/flags/nl.svg"
 
 
 
@@ -77,9 +62,6 @@ type Msg
     | SetSound Sound
     | Speak
     | Spell
-    | SetApiUrl String
-    | SelectLocale Code
-    | SetLocale Encode.Value
 
 
 
@@ -103,11 +85,6 @@ type Sound
     | Off
 
 
-type Code
-    = En
-    | Nl
-
-
 type alias NewWord =
     { word : String
     , definition : String
@@ -123,9 +100,6 @@ type alias Model =
     { status : Status
     , output : Output
     , sound : Sound
-    , lang : Code
-    , apiUrl : String
-    , translations : Translations
     , newWord : NewWord
     , guessWord : String
     , checkWord : String
@@ -134,47 +108,24 @@ type alias Model =
 
 
 
--- FLAGS
-
-
-type alias Flags =
-    { translations : Encode.Value }
-
-
-
 -- INIT
 
 
-initialModel : Model
+initialModel : ( Model, Cmd Msg )
 initialModel =
-    { status = Loading
-    , output = Init
-    , sound = On
-    , lang = En
-    , apiUrl = "https://random-words-api.vercel.app/word"
-    , translations = initialTranslations
-    , newWord =
-        { word = "INIT"
-        , definition = ""
-        , pronunciation = ""
-        }
-    , guessWord = ""
-    , checkWord = ""
-    , result = ""
-    }
-
-
-init : Flags -> ( Model, Cmd Msg )
-init flags =
-    let
-        setLocaleTranslation : Translations
-        setLocaleTranslation =
-            setUILanguage flags.translations
-    in
-    ( { initialModel
-        | translations = setLocaleTranslation
+    ( { status = Loading
+      , output = Init
+      , sound = On
+      , newWord =
+            { word = "INIT"
+            , definition = ""
+            , pronunciation = ""
+            }
+      , guessWord = ""
+      , checkWord = ""
+      , result = ""
       }
-    , getNewWordCmd initialModel
+    , getNewWordCmd
     )
 
 
@@ -182,10 +133,10 @@ init flags =
 -- MAIN
 
 
-main : Program Flags Model Msg
+main : Program () Model Msg
 main =
     Browser.element
-        { init = init
+        { init = \_ -> initialModel
         , view = view
         , update = update
         , subscriptions = subscriptions
@@ -196,10 +147,10 @@ main =
 -- COMMANDS
 
 
-getNewWordCmd : Model -> Cmd Msg
-getNewWordCmd model =
+getNewWordCmd : Cmd Msg
+getNewWordCmd =
     Http.get
-        { url = model.apiUrl
+        { url = randomWordsApiUrl
         , expect = Http.expectJson GetNewWord (Decode.list newWordDecoder)
         }
 
@@ -218,11 +169,7 @@ newWordDecoder =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.batch
-        [ Browser.Events.onKeyDown (Decode.map KeyPressed decodeKeyboardEvent)
-        , setLocale SetLocale
-        , setApiUrl SetApiUrl
-        ]
+    Browser.Events.onKeyDown (Decode.map KeyPressed decodeKeyboardEvent)
 
 
 
@@ -236,15 +183,6 @@ port spell : List String -> Cmd msg
 
 
 port sound : Bool -> Cmd msg
-
-
-port chooseLanguage : String -> Cmd msg
-
-
-port setLocale : (Encode.Value -> msg) -> Sub msg
-
-
-port setApiUrl : (String -> msg) -> Sub msg
 
 
 
@@ -328,9 +266,9 @@ viewLoaded newWord model =
         [ Aria.label "Loaded App"
         , Attr.class "bg-shell_orange border md:rounded-t-[2.5rem] md:rounded-b-[5rem]"
         ]
-        [ div [] [ newWordScreen model newWord ]
+        [ div [] [ newWordScreen newWord ]
         , div [] [ outputScreen model ]
-        , div [] [ yellowShell (namePlusSoundCtrl model) (theKeyboard model) ]
+        , div [] [ yellowShell namePlusSoundCtrl theKeyboard ]
         ]
 
 
@@ -377,13 +315,13 @@ namePlusLogo =
         ]
 
 
-namePlusSoundCtrl : Model -> Html Msg
-namePlusSoundCtrl model =
+namePlusSoundCtrl : Html Msg
+namePlusSoundCtrl =
     let
         soundCommands : List { cmdMsg : Msg, cmdName : String }
         soundCommands =
-            [ { cmdMsg = SetSound Off, cmdName = TranslationCmd.soundOff model.translations }
-            , { cmdMsg = SetSound On, cmdName = TranslationCmd.soundOn model.translations }
+            [ { cmdMsg = SetSound Off, cmdName = "SOUND OFF [3]" }
+            , { cmdMsg = SetSound On, cmdName = "SOUND ON [2]" }
             ]
     in
     div
@@ -405,18 +343,18 @@ namePlusSoundCtrl model =
         ]
 
 
-theKeyboard : Model -> Html Msg
-theKeyboard model =
+theKeyboard : Html Msg
+theKeyboard =
     let
         keyboardCommands : List { cmdMsg : Msg, cmdName : String }
         keyboardCommands =
-            [ { cmdMsg = EraseLetter, cmdName = TranslationCmd.erase model.translations }
-            , { cmdMsg = ResetWord, cmdName = TranslationCmd.reset model.translations }
-            , { cmdMsg = Speak, cmdName = TranslationCmd.spell model.translations }
-            , { cmdMsg = Spell, cmdName = TranslationCmd.spell model.translations }
-            , { cmdMsg = SubmitWord, cmdName = TranslationCmd.submit model.translations }
-            , { cmdMsg = ResetWord, cmdName = TranslationCmd.retry model.translations }
-            , { cmdMsg = GetAnotherWord, cmdName = TranslationCmd.new model.translations }
+            [ { cmdMsg = EraseLetter, cmdName = "ERASE [↤]" }
+            , { cmdMsg = ResetWord, cmdName = "RESET [5]" }
+            , { cmdMsg = Speak, cmdName = "SPEAK [8]" }
+            , { cmdMsg = Spell, cmdName = "SPELL [9]" }
+            , { cmdMsg = SubmitWord, cmdName = "SUBMIT [↵]" }
+            , { cmdMsg = ResetWord, cmdName = "RETRY [6]" }
+            , { cmdMsg = GetAnotherWord, cmdName = "NEW [0]" }
             ]
     in
     div
@@ -443,8 +381,8 @@ theKeyboard model =
         ]
 
 
-newWordScreen : Model -> NewWord -> Html Msg
-newWordScreen model newWord =
+newWordScreen : NewWord -> Html Msg
+newWordScreen newWord =
     div
         -- new word "top screen"
         [ Aria.label "New Word Screen"
@@ -454,50 +392,15 @@ newWordScreen model newWord =
             [ p
                 [ Aria.label "New Word"
                 ]
-                [ text (TranslationScreen.word model.translations ++ " " ++ String.toUpper newWord.word) ]
+                [ text ("Your word is:" ++ String.toUpper newWord.word) ]
             , p
                 [ Aria.label "Word Definition"
                 ]
-                [ text (TranslationScreen.definition model.translations ++ " " ++ newWord.definition) ]
+                [ text ("Definition:" ++ newWord.definition) ]
             , p
                 [ Aria.label "Word Pronunciation"
                 ]
-                [ text (TranslationScreen.pronunciation model.translations ++ " " ++ newWord.pronunciation) ]
-            , div [] [ languages ]
-            ]
-        ]
-
-
-languages : Html Msg
-languages =
-    ul [ Aria.label "languages and localizations", Attr.class "flex justify-center md:justify-end gap-x-2 mt-2" ]
-        [ li []
-            [ button
-                [ Aria.label "english language select"
-                , onClick (SelectLocale En)
-                ]
-                [ img
-                    [ Attr.src gbFlag
-                    , Attr.class "w-4 h-4 md:w-6 md:h-6"
-                    , Attr.alt "UK flag"
-                    , Attr.title "UK flag"
-                    ]
-                    []
-                ]
-            ]
-        , li []
-            [ button
-                [ Aria.label "dutch language select"
-                , onClick (SelectLocale Nl)
-                ]
-                [ img
-                    [ Attr.src nlFlag
-                    , Attr.class "w-4 h-4 md:w-6 md:h-6"
-                    , Attr.alt "Netherlands flag"
-                    , Attr.title "Netherlands flag"
-                    ]
-                    []
-                ]
+                [ text ("Pronunciation:" ++ newWord.pronunciation) ]
             ]
         ]
 
@@ -598,8 +501,7 @@ outputText : Model -> String
 outputText model =
     case model.output of
         Init ->
-            TranslationInit.message model.translations
-                |> String.toUpper
+            "START TYPING TO MATCH THE WORD ABOVE"
 
         Word ->
             model.guessWord
@@ -665,7 +567,7 @@ update msg model =
 
         GetAnotherWord ->
             ( resetWord model
-            , getNewWordCmd model
+            , getNewWordCmd
             )
 
         EraseLetter ->
@@ -702,54 +604,9 @@ update msg model =
             , spell (splitToSpell (wordToSpeak model))
             )
 
-        SetApiUrl url ->
-            ( { model | apiUrl = url }
-            , getNewWordCmd model
-            )
-
-        SelectLocale lang ->
-            ( { model | lang = lang }
-            , chooseLanguage (langCodeToString lang)
-            )
-
-        SetLocale locale ->
-            ( { model | translations = setUILanguage locale }
-            , getNewWordCmd model
-            )
-
 
 
 -- UPDATE HELPERS
-
-
-langCodeToString : Code -> String
-langCodeToString lang =
-    case lang of
-        En ->
-            "en"
-
-        Nl ->
-            "nl"
-
-
-setUILanguage : Encode.Value -> Translations
-setUILanguage encodedJson =
-    case Decode.decodeValue translationsDecoder encodedJson of
-        Ok translations ->
-            translations
-
-        Err _ ->
-            initialTranslations
-
-
-
--- setAPIurl : Model -> String
--- setAPIurl model =
---     case model.lang of
---         En ->
---             "https://random-words-api.vercel.app/word"
---         Nl ->
---             "https://random-words-api.vercel.app/word/dutch"
 
 
 kbdEventToCommand : KeyboardEvent -> Model -> ( Model, Cmd Msg )
@@ -797,7 +654,7 @@ kbdEventToCommand event model =
 
             Just "0" ->
                 ( resetWord model
-                , getNewWordCmd model
+                , getNewWordCmd
                 )
 
             Just "Backspace" ->

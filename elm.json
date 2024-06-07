@@ -6,7 +6,6 @@
     "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
-            "ChristophP/elm-i18next": "4.2.1",
             "Gizra/elm-keyboard-event": "1.0.1",
             "NoRedInk/elm-json-decode-pipeline": "1.0.1",
             "elm/browser": "1.0.2",

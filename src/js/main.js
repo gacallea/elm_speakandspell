@@ -1,28 +1,9 @@
 import '../css/style.css'
 import { Elm } from '../elm/SpeakAndSpell.elm'
 
-// translations defaults to English
-let res = await fetch('translations/translations.en.json')
-const translations = await res.json()
-
 // Start the Elm application.
 const app = Elm.SpeakAndSpell.init({
-  node: document.querySelector('main'),
-  flags: { translations }
-})
-
-// Set the UI translation in Elm
-app.ports.chooseLanguage.subscribe(async (message) => {
-  res = await fetch('translations/translations.' + message + '.json')
-  const jsonRes = await res.json()
-
-  if (message === 'en') {
-    app.ports.setApiUrl.send('https://random-words-api.vercel.app/word')
-  } else if (message === 'nl') {
-    app.ports.setApiUrl.send('https://random-words-api.vercel.app/word/dutch')
-  }
-
-  app.ports.setLocale.send(jsonRes)
+  node: document.querySelector('main')
 })
 
 // Instantiate Speech Synth API

@@ -13,8 +13,8 @@ need to deploy the API first, and then point a clone of this very app to it.
 
 - API repo:
   [https://github.com/mcnaveen/random-words-api](https://github.com/mcnaveen/random-words-api)
-- API URLs need changing in [main.js](./src/js/main.js#L19-L23) and
-  [SpeakAndSpell.elm](./src/elm/SpeakAndSpell.elm#L154)
+- API URLs need changing in
+  [SpeakAndSpell.elm](./src/elm/SpeakAndSpell.elm#L37)
 
 ## Why Speak & Spell?
 
@@ -24,12 +24,12 @@ completely from scratch, as opposed to pre-existing concepts.
 
 ## Is it a clone?
 
-Being a *toy project* (no pun intended), this is a limited reproduction:
+Being a _toy project_ (no pun intended), this is a limited reproduction:
 
-1) match the word on the screen
-2) use the commands
+1. match the word on the screen
+2. use the commands
 
-No *Mystery Word* or any other play mode from the original game.
+No _Mystery Word_ or any other play mode from the original game.
 
 The point of this exercise was to: study, internalize, apply, learn some more,
 improve skills and code, rinse and repeat. Not to be an 1:1 clone.
@@ -67,7 +67,7 @@ Template](https://github.com/gacallea/elm_vite_tailwind_template). Check it out
 
 ## Credits & Copyright
 
-[Speak & Spell](https://en.wikipedia.org/wiki/Speak_%26_Spell_(toy))™ is © of
+[Speak & Spell](<https://en.wikipedia.org/wiki/Speak_%26_Spell_(toy)>)™ is © of
 Texas Instruments Inc.
 
 The favicon used on the Vercel app is © [Gregor
