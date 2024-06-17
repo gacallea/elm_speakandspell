@@ -12,9 +12,8 @@ requests would cost them money. I cannot justify deploying my own or forcing
 anyone to do so for this mock app. Thus, I have switched to a different free
 random word API and refactored the Elm code to adapt to it. The API lacks
 definition and pronunciation but at least my Speak and Spell app is available
-and usable.
-
-You can find the old/original version with more features [on this branch](https://github.com/gacallea/elm_speakandspell/tree/old_api_version_with_translations).
+and usable. You can find the old/original version with more features [on this
+branch](https://github.com/gacallea/elm_speakandspell/tree/old_api_version_with_translations).
 
 ## Why Speak & Spell?
 
