@@ -7,10 +7,11 @@ port module SpeakAndSpell exposing
     , Status(..)
     , elmLogoBlue
     , elmLogoGray
+    , initialModel
     , main
     , namePlusLogo
-    , newWordDecoder
     , outputScreen
+    , rootDecoder
     , viewLoading
     )
 
@@ -21,8 +22,7 @@ import Html exposing (Html, a, button, div, img, main_, p, text)
 import Html.Attributes as Attr
 import Html.Events exposing (onClick)
 import Http
-import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Pipeline as Pipeline
+import Json.Decode
 import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
 import VitePluginHelper exposing (asset)
 
@@ -33,8 +33,7 @@ import VitePluginHelper exposing (asset)
 
 randomWordsApiUrl : String
 randomWordsApiUrl =
-    -- api source = https://github.com/mcnaveen/Random-Words-API
-    "https://random-words-api.vercel.app/word"
+    "https://random-word.ryanrk.com//api/en/word/random"
 
 
 elmLogoBlue : String
@@ -86,10 +85,7 @@ type Sound
 
 
 type alias NewWord =
-    { word : String
-    , definition : String
-    , pronunciation : String
-    }
+    String
 
 
 
@@ -116,11 +112,7 @@ initialModel =
     ( { status = Loading
       , output = Init
       , sound = On
-      , newWord =
-            { word = "INIT"
-            , definition = ""
-            , pronunciation = ""
-            }
+      , newWord = "INIT"
       , guessWord = ""
       , checkWord = ""
       , result = ""
@@ -151,16 +143,13 @@ getNewWordCmd : Cmd Msg
 getNewWordCmd =
     Http.get
         { url = randomWordsApiUrl
-        , expect = Http.expectJson GetNewWord (Decode.list newWordDecoder)
+        , expect = Http.expectJson GetNewWord rootDecoder
         }
 
 
-newWordDecoder : Decoder NewWord
-newWordDecoder =
-    Decode.succeed NewWord
-        |> Pipeline.required "word" Decode.string
-        |> Pipeline.required "definition" Decode.string
-        |> Pipeline.required "pronunciation" Decode.string
+rootDecoder : Json.Decode.Decoder (List String)
+rootDecoder =
+    Json.Decode.list Json.Decode.string
 
 
 
@@ -169,7 +158,7 @@ newWordDecoder =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Browser.Events.onKeyDown (Decode.map KeyPressed decodeKeyboardEvent)
+    Browser.Events.onKeyDown (Json.Decode.map KeyPressed decodeKeyboardEvent)
 
 
 
@@ -388,19 +377,19 @@ newWordScreen newWord =
         [ Aria.label "New Word Screen"
         , Attr.class "bg-sky-500 text-base md:text-lg lg:text-xl flex flex-col justify-between m-2 md:mb-8 md:mt-8 md:mx-6 rounded-lg md:rounded-3xl border border-solid border-black"
         ]
-        [ div [ Attr.class "px-4 pt-8 pb-2 md:px-8 md:pt-10" ]
+        [ div [ Attr.class "px-4 py-4 pb-2 md:px-8 md:py-8" ]
             [ p
                 [ Aria.label "New Word"
                 ]
-                [ text ("Your word is:" ++ String.toUpper newWord.word) ]
+                [ text ("Your word is: " ++ String.toUpper newWord) ]
             , p
                 [ Aria.label "Word Definition"
                 ]
-                [ text ("Definition:" ++ newWord.definition) ]
+                [ text "Definition: N/A with this API" ]
             , p
                 [ Aria.label "Word Pronunciation"
                 ]
-                [ text ("Pronunciation:" ++ newWord.pronunciation) ]
+                [ text "Pronunciation: N/A with this API" ]
             ]
         ]
 
@@ -777,12 +766,9 @@ unwrapNewWordList wordsList =
             word
 
         Nothing ->
-            { word = "NOTHING"
-            , definition = ""
-            , pronunciation = ""
-            }
+            "NOTHING"
 
 
 setCheckWord : NewWord -> String
-setCheckWord wordsList =
-    String.toUpper wordsList.word
+setCheckWord word =
+    String.toUpper word

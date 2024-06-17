@@ -4,17 +4,17 @@ My very first attempt at an [Elm](https://elm-lang.org/) application, to test
 my understanding of [Elm in
 Action](https://www.manning.com/books/elm-in-action).
 
-## BROKEN API UPDATE (20231023)
+## CHANGE OF API UPDATE (20240617)
 
-The Random Word API I used for this app is justifiably returning an error, most
-likely because the many requests would cost them money. They invite users to
-self-deploy. If you intend to check my Speak And Spell Elm implementation, you
-need to deploy the API first, and then point a clone of this very app to it.
+The Random Word API I used to use for this app is justifiably returning an
+error and encourages users to deploy their own, most likely because the many
+requests would cost them money. I cannot justify deploying my own or forcing
+anyone to do so for this mock app. Thus, I have switched to a different free
+random word API and refactored the Elm code to adapt to it. The API lacks
+definition and pronunciation but at least my Speak and Spell app is available
+and usable.
 
-- API repo:
-  [https://github.com/mcnaveen/random-words-api](https://github.com/mcnaveen/random-words-api)
-- API URLs need changing in
-  [SpeakAndSpell.elm](./src/elm/SpeakAndSpell.elm#L37)
+You can find the old/original version with more features [on this branch](https://github.com/gacallea/elm_speakandspell/tree/old_api_version_with_translations).
 
 ## Why Speak & Spell?
 
